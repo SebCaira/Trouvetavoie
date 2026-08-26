@@ -532,6 +532,94 @@ function RemindersScreen({ reminders, academie, onToggleKey, onAddCustom, onDele
   );
 }
 
+// ── Réglages (thème, accent, animations, lecture facile) ───────
+// Persistés avec le profil (voir setSetting dans App) — contrairement au
+// panneau Tweaks, réservé à l'itération de design, ces réglages sont
+// visibles et modifiables par l'élève, et survivent au rechargement.
+const SETTINGS_ACCENTS = [
+  { key: 'Indigo', hue: 280 },
+  { key: 'Cyan', hue: 200 },
+  { key: 'Ambre', hue: 45 },
+  { key: 'Rose', hue: 350 },
+];
+
+function SettingsScreen({ theme, accent: accentKey, anim, a11y, onChange, onBack }) {
+  const hue = appHue();
+  const light = themeMode() === 'light';
+
+  const Toggle = ({ on, onClick }) => (
+    <button onClick={onClick} role="switch" aria-checked={on} style={{
+      width: 46, height: 28, borderRadius: 999, flexShrink: 0, position: 'relative', border: 'none', cursor: 'pointer',
+      background: on ? accent(hue) : (light ? 'rgba(16,22,40,0.12)' : 'rgba(255,255,255,0.12)'), transition: 'background .2s',
+    }}>
+      <div style={{ position: 'absolute', top: 3, left: on ? 21 : 3, width: 22, height: 22, borderRadius: 999, background: '#fff', transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,0.3)' }} />
+    </button>
+  );
+
+  const ToggleRow = ({ label, note, on, onClick }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 15px', borderRadius: 16, background: T.surface, border: `1px solid ${T.line}` }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: FONT_UI, fontSize: 15, fontWeight: 700, color: T.text }}>{label}</div>
+        {note && <div style={{ fontFamily: FONT_UI, fontSize: 13, color: T.muted, marginTop: 2, lineHeight: 1.4 }}>{note}</div>}
+      </div>
+      <Toggle on={on} onClick={onClick} />
+    </div>
+  );
+
+  return (
+    <div style={{ position: 'relative', minHeight: '100%', overflow: 'hidden', boxSizing: 'border-box', paddingBottom: 40 }}>
+      <Glow hue={hue} top="-14%" size={440} opacity={0.3} />
+      <div style={{ position: 'relative', zIndex: 1, padding: '66px 22px 0' }} className="q-fade">
+        <div style={{ marginBottom: 20 }}><BackBtn onClick={onBack} /></div>
+        <div style={{ fontFamily: FONT_UI, fontSize: 13, fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', color: T.faint }}>Personnalisation</div>
+        <h1 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, color: T.text, fontSize: 32, letterSpacing: -0.8, margin: '8px 0 8px', lineHeight: 1.04 }}>Réglages</h1>
+        <p style={{ fontFamily: FONT_UI, fontSize: 15.5, color: T.muted, margin: '0 0 26px', lineHeight: 1.45 }}>Personnalise l’appli à ta façon. Ça reste sur cet appareil.</p>
+
+        <div style={{ fontFamily: FONT_UI, fontSize: 12.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: T.faint, marginBottom: 11 }}>Apparence</div>
+
+        <div style={{ fontFamily: FONT_UI, fontSize: 13.5, fontWeight: 700, color: T.body, margin: '0 0 9px' }}>Thème</div>
+        <div style={{ display: 'flex', gap: 9, marginBottom: 18 }}>
+          {['Sombre', 'Clair'].map((k) => {
+            const on = theme === k;
+            return (
+              <button key={k} onClick={() => onChange('theme', k)} style={{
+                flex: 1, cursor: 'pointer', padding: '13px', borderRadius: 13,
+                fontFamily: FONT_UI, fontSize: 15, fontWeight: 700,
+                color: on ? '#0B0E16' : T.muted, background: on ? accent(hue) : T.surface,
+                border: `1.5px solid ${on ? accent(hue) : T.line}`,
+              }}>{k}</button>
+            );
+          })}
+        </div>
+
+        <div style={{ fontFamily: FONT_UI, fontSize: 13.5, fontWeight: 700, color: T.body, margin: '0 0 9px' }}>Accent</div>
+        <div style={{ display: 'flex', gap: 9, marginBottom: 18 }}>
+          {SETTINGS_ACCENTS.map((a) => {
+            const on = accentKey === a.key;
+            return (
+              <button key={a.key} onClick={() => onChange('accent', a.key)} aria-label={a.key} style={{
+                flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, cursor: 'pointer',
+                padding: '10px 6px', borderRadius: 13, background: T.surface,
+                border: `1.5px solid ${on ? accent(a.hue) : T.line}`,
+              }}>
+                <span style={{ width: 26, height: 26, borderRadius: 999, background: accent(a.hue), boxShadow: on ? `0 0 0 3px ${accent(a.hue, { a: 0.25 })}` : 'none' }} />
+                <span style={{ fontFamily: FONT_UI, fontSize: 11.5, fontWeight: 700, color: on ? T.text : T.muted }}>{a.key}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 26 }}>
+          <ToggleRow label="Animations" note="Transitions et effets à l’écran." on={anim !== false} onClick={() => onChange('anim', !(anim !== false))} />
+        </div>
+
+        <div style={{ fontFamily: FONT_UI, fontSize: 12.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: T.faint, marginBottom: 11 }}>Accessibilité</div>
+        <ToggleRow label="Lecture facile" note="Police plus lisible et espacement augmenté." on={!!a11y} onClick={() => onChange('a11y', !a11y)} />
+      </div>
+    </div>
+  );
+}
+
 // ── Mon avis (questionnaire — Netlify Forms) ───────────────────
 function StarRating({ value, onChange, hue }) {
   return (
@@ -647,4 +735,4 @@ function FeedbackScreen({ onBack, onToast }) {
   );
 }
 
-Object.assign(window, { SpeakButton, FairnessBanner, RiasecScreen, RiasecResult, JournalScreen, EventsScreen, TensionScreen, NextReminderCard, RemindersScreen, FeedbackScreen });
+Object.assign(window, { SpeakButton, FairnessBanner, RiasecScreen, RiasecResult, JournalScreen, EventsScreen, TensionScreen, NextReminderCard, RemindersScreen, SettingsScreen, FeedbackScreen });

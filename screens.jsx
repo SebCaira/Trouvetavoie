@@ -861,7 +861,7 @@ function DetailScreen({ filiereKey, onBack, onOpenMetier, isVoieFav, onToggleVoi
 }
 
 // ── Profil ─────────────────────────────────────────────────────
-function ProfileScreen({ profile, asTab, onBack, onRetake, onShare, onOpen, onOpenMetier, onSetPrenom, onRecap, onEditSubjects, onGlossaire, onParents, onQuestions, onJournal, onAnonExport, isVoieFav, onToggleVoieFav, isFav, onToggleFav }) {
+function ProfileScreen({ profile, asTab, onBack, onRetake, onShare, onOpen, onOpenMetier, onSetPrenom, onRecap, onEditSubjects, onGlossaire, onParents, onQuestions, onJournal, onSettings, onAnonExport, isVoieFav, onToggleVoieFav, isFav, onToggleFav }) {
   const res = profile.result;
   const favs = profile.favorites || [];
   const dateStr = res ? new Date(res.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
@@ -894,6 +894,20 @@ function ProfileScreen({ profile, asTab, onBack, onRetake, onShare, onOpen, onOp
             style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', background: 'transparent', fontFamily: FONT_UI, fontSize: 15.5, fontWeight: 600, color: T.text }}
           />
         </div>
+
+        <button onClick={onSettings} style={{
+          display: 'flex', alignItems: 'center', gap: 13, width: '100%', textAlign: 'left', cursor: 'pointer',
+          marginTop: 10, padding: '14px 15px', borderRadius: 16, background: T.surface, border: `1px solid ${T.line}`,
+        }}>
+          <div style={{ width: 40, height: 40, flexShrink: 0, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: accent(appHue(), { a: 0.14 }), border: `1px solid ${accent(appHue(), { a: 0.28 })}` }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke={accent(appHue(), { l: themeMode() === 'light' ? 0.5 : 0.84, c: 0.1 })} strokeWidth="1.7"/><path d="M19.4 13.5a7.6 7.6 0 000-3l2-1.4-2-3.4-2.3.9a7.6 7.6 0 00-2.6-1.5L14 2.5h-4l-.5 2.6a7.6 7.6 0 00-2.6 1.5l-2.3-.9-2 3.4 2 1.4a7.6 7.6 0 000 3l-2 1.4 2 3.4 2.3-.9c.76.66 1.64 1.17 2.6 1.5l.5 2.6h4l.5-2.6a7.6 7.6 0 002.6-1.5l2.3.9 2-3.4z" stroke={accent(appHue(), { l: themeMode() === 'light' ? 0.5 : 0.84, c: 0.1 })} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: FONT_UI, fontSize: 15, fontWeight: 700, color: T.text }}>Réglages</div>
+            <div style={{ fontFamily: FONT_UI, fontSize: 13, color: T.muted, marginTop: 2 }}>Thème, accent, animations, lecture facile</div>
+          </div>
+          <svg width="8" height="14" viewBox="0 0 8 14" fill="none"><path d="M1 1l6 6-6 6" stroke={T.faint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+        </button>
 
         <Label>Mon dernier résultat</Label>
         {res ? (

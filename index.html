@@ -158,17 +158,14 @@
           voieFavs: p.voieFavs || [], onboarded: !!p.onboarded, classe: p.classe || '', goal: p.goal || '',
           journal: p.journal || [], riasec: p.riasec || null, academie: p.academie || '',
           reminders: p.reminders || { enabled: [], custom: [] },
+          settings: (p.settings && typeof p.settings === 'object') ? p.settings : {},
         };
       } catch (e) {}
-      return { result: null, favorites: [], prenom: '', subjects: [], history: [], checklist: [], voieFavs: [], onboarded: false, classe: '', goal: '', journal: [], riasec: null, academie: '', reminders: { enabled: [], custom: [] } };
+      return { result: null, favorites: [], prenom: '', subjects: [], history: [], checklist: [], voieFavs: [], onboarded: false, classe: '', goal: '', journal: [], riasec: null, academie: '', reminders: { enabled: [], custom: [] }, settings: {} };
     }
 
     function App() {
       const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-      // applique l'accent app + halos + thème avant tout rendu enfant
-      setAppHue(ACCENT_HUES[t.accent] || 280);
-      setGlowOn(t.glow !== false);
-      applyTheme(t.theme === 'Clair' ? 'light' : 'dark');
 
       const init = loadState();
       const migrate = (s) => (s === 'home' || s === 'profile' || !s) ? 'tabs' : s;
@@ -182,6 +179,21 @@
       const [profileFrom, setProfileFrom] = useState('tabs');
       const [subjectsFrom, setSubjectsFrom] = useState('tabs');
       const [profile, setProfile] = useState(loadProfile);
+      const settings = profile.settings || {};
+      // Réglages réels de l'élève (persistés avec le profil) — priment sur les
+      // valeurs du panneau Tweaks (outil de design, non accessible en usage réel).
+      const effTheme = settings.theme || t.theme;
+      const effAccent = settings.accent || t.accent;
+      const effAnim = typeof settings.anim === 'boolean' ? settings.anim : t.anim;
+      const effA11y = typeof settings.a11y === 'boolean' ? settings.a11y : t.a11y;
+      // applique l'accent app + halos + thème avant tout rendu enfant
+      setAppHue(ACCENT_HUES[effAccent] || 280);
+      setGlowOn(t.glow !== false);
+      applyTheme(effTheme === 'Clair' ? 'light' : 'dark');
+      function setSetting(key, value) {
+        setTweak(key, value); // garde le panneau Tweaks synchronisé (outil de design)
+        setProfile((p) => ({ ...p, settings: { ...(p.settings || {}), [key]: value } }));
+      }
       const [toast, setToast] = useState(null);
       const [sheetId, setSheetId] = useState(null);   // métier ouvert (fiche) ou null
       const [sheetHue, setSheetHue] = useState(null);
@@ -205,19 +217,19 @@
 
       // flag d'animation sur le body (cible le CSS [data-anim="off"])
       useEffect(() => {
-        document.body.dataset.anim = t.anim === false ? 'off' : 'on';
-      }, [t.anim]);
+        document.body.dataset.anim = effAnim === false ? 'off' : 'on';
+      }, [effAnim]);
 
       // accessibilité — lecture facile
       useEffect(() => {
-        if (t.a11y) document.body.dataset.a11y = 'easy';
+        if (effA11y) document.body.dataset.a11y = 'easy';
         else document.body.removeAttribute('data-a11y');
-      }, [t.a11y]);
+      }, [effA11y]);
 
       // thème clair / sombre sur le body (fond du letterbox + barre d'état)
       useEffect(() => {
-        document.body.dataset.theme = t.theme === 'Clair' ? 'light' : 'dark';
-      }, [t.theme]);
+        document.body.dataset.theme = effTheme === 'Clair' ? 'light' : 'dark';
+      }, [effTheme]);
 
       // toast auto-disparaissant
       useEffect(() => {
@@ -511,7 +523,7 @@
       // contenu d'un onglet racine (sous la tab bar)
       function tabContent() {
         if (tab === 'metiers') return <MetiersScreen onOpenMetier={(id) => openMetier(id, null)} isFav={isFav} onToggleFav={toggleFav} />;
-        if (tab === 'profil') return <ProfileScreen asTab profile={profile} onRetake={() => start('full')} onShare={share} onOpen={(k) => openDetail(k, 'tabs')} onOpenMetier={(id) => openMetier(id, null)} onSetPrenom={setPrenom} onRecap={openRecap} onEditSubjects={() => openSubjects('tabs')} onGlossaire={() => openScreen('glossaire', 'tabs')} onParents={() => openScreen('parents', 'tabs')} onQuestions={() => openScreen('questions', 'tabs')} onJournal={() => openScreen('journal', 'tabs')} onAnonExport={shareAnon} isVoieFav={isVoieFav} onToggleVoieFav={toggleVoieFav} isFav={isFav} onToggleFav={toggleFav} />;
+        if (tab === 'profil') return <ProfileScreen asTab profile={profile} onRetake={() => start('full')} onShare={share} onOpen={(k) => openDetail(k, 'tabs')} onOpenMetier={(id) => openMetier(id, null)} onSetPrenom={setPrenom} onRecap={openRecap} onEditSubjects={() => openSubjects('tabs')} onGlossaire={() => openScreen('glossaire', 'tabs')} onParents={() => openScreen('parents', 'tabs')} onQuestions={() => openScreen('questions', 'tabs')} onJournal={() => openScreen('journal', 'tabs')} onSettings={() => openScreen('reglages', 'tabs')} onAnonExport={shareAnon} isVoieFav={isVoieFav} onToggleVoieFav={toggleVoieFav} isFav={isFav} onToggleFav={toggleFav} />;
         return <HomeScreen prenom={profile.prenom} reminders={profile.reminders} onReminders={() => openScreen('reminders', 'tabs')} onStart={() => start('full')} onExpress={() => start('express')} onRiasec={startRiasec} onSteps={() => { setProfileFrom('tabs'); setScreen('steps'); }} onEtab={() => { setEtabCfg({ filter: 'all', context: '' }); openScreen('etab', 'tabs'); }} onEvents={() => openScreen('events', 'tabs')} onTension={() => openScreen('tension', 'tabs')} />;
       }
 
@@ -554,6 +566,8 @@
         body = <RiasecResult result={riasecResult()} onBack={() => goTab('voie')} onOpenMetiers={() => goTab('metiers')} />;
       } else if (screen === 'journal') {
         body = <JournalScreen journal={profile.journal} onAdd={addNote} onDelete={deleteNote} onBack={() => setScreen(backTo)} />;
+      } else if (screen === 'reglages') {
+        body = <SettingsScreen theme={effTheme} accent={effAccent} anim={effAnim} a11y={effA11y} onChange={setSetting} onBack={() => setScreen(backTo)} />;
       } else if (screen === 'events') {
         body = <EventsScreen onBack={() => setScreen(backTo)} />;
       } else if (screen === 'reminders') {
