@@ -1,0 +1,17 @@
+{
+  "name": "trouve-ta-voie",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Trouve ta voie — compagnon d'orientation pour les élèves de 3e",
+  "scripts": {
+    "build": "node scripts/build-www.js",
+    "ios:add": "npm run build && npx cap add ios",
+    "ios:sync": "npm run build && npx cap sync ios",
+    "ios:open": "npx cap open ios"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  }
+}
