@@ -46,5 +46,9 @@
 	     système iOS lors de la première demande. -->
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pour te proposer les lycées les plus proches de toi quand tu utilises « Autour de moi ».</string>
+	<!-- Aucune cryptographie propriétaire au-delà de ce qu'iOS fournit (HTTPS
+	     standard) : évite la question de conformité export à chaque build. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
