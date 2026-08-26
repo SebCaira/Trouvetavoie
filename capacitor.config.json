@@ -1,0 +1,11 @@
+{
+  "appId": "fr.trouvetavoie.app",
+  "appName": "Trouve ta voie",
+  "webDir": "www",
+  "backgroundColor": "#0B0E16",
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0B0E16",
+    "preferredContentMode": "mobile"
+  }
+}

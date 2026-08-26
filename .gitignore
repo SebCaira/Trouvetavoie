@@ -1,2 +1,5 @@
 node_modules/
 www/
+.DS_Store
+
+# ios/.gitignore (généré par Capacitor) gère déjà Pods/, xcuserdata/, etc.
