@@ -1,0 +1,32 @@
+name: Deploy to Netlify (optional)
+
+# Inactif tant que les secrets NETLIFY_AUTH_TOKEN et NETLIFY_SITE_ID ne sont
+# pas ajoutés (Settings → Secrets and variables → Actions, sur ce dépôt).
+# Nécessaire pour « Mon avis » (Netlify Forms) et un domaine personnalisé —
+# GitHub Pages ne fournit ni l'un ni l'autre.
+on:
+  push:
+    branches:
+      - main
+      - claude/trouve-ta-voie-app-g11prw
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ vars.NETLIFY_SITE_ID != '' || secrets.NETLIFY_SITE_ID != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v3
+        with:
+          publish-dir: '.'
+          production-branch: main
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "Deploy from GitHub Actions (${{ github.sha }})"
+          enable-pull-request-comment: false
+          enable-commit-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        timeout-minutes: 5

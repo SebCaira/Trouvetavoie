@@ -16,6 +16,9 @@ const APP_SHELL = [
   './manifest.webmanifest',
   './deploy/icon-192.png',
   './deploy/icon-512.png',
+  './vendor/react.production.min.js',
+  './vendor/react-dom.production.min.js',
+  './vendor/babel.min.js',
 ];
 
 const isLiveApi = (url) =>
