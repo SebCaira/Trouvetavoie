@@ -10,7 +10,7 @@ const WWW = path.join(ROOT, 'www');
 
 const FILES = [
   'index.html', 'ui.jsx', 'data.jsx', 'screens.jsx', 'extras.jsx', 'extras2.jsx',
-  'ios-frame.jsx', 'tweaks-panel.jsx', 'manifest.webmanifest', 'sw.js',
+  'ios-frame.jsx', 'tweaks-panel.jsx', 'manifest.webmanifest', 'sw.js', 'privacy.html',
 ];
 const DIRS = ['vendor', 'deploy'];
 
