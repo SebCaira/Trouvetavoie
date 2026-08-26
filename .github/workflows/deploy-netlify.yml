@@ -14,10 +14,19 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ vars.NETLIFY_SITE_ID != '' || secrets.NETLIFY_SITE_ID != '' }}
     steps:
+      # Les secrets ne peuvent pas être lus directement dans un `if:` de job —
+      # on les fait transiter par une variable d'environnement pour décider si
+      # ce job a quelque chose à faire.
+      - name: Check for Netlify secrets
+        id: check
+        env:
+          HAS_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: echo "enabled=${{ env.HAS_SITE_ID != '' }}" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
+        if: steps.check.outputs.enabled == 'true'
       - name: Deploy to Netlify
+        if: steps.check.outputs.enabled == 'true'
         uses: nwtgck/actions-netlify@v3
         with:
           publish-dir: '.'
