@@ -1,0 +1,674 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Orientation 3ᵉ — Trouve ta voie</title>
+<meta name="description" content="Le compagnon d'orientation des élèves de 3ᵉ : test, fiches métiers Onisep, filières, établissements près de chez toi et démarches." />
+<meta name="theme-color" content="#0B0E16" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Orientation 3ᵉ" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="deploy/icon-192.png" />
+<link rel="icon" type="image/png" href="deploy/icon-192.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@500;600;700;800&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background:
+      radial-gradient(900px 600px at 50% -10%, #15182a 0%, transparent 60%),
+      #06070d;
+    font-family: 'Manrope', -apple-system, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  /* Mode « vraie app » : plein écran, sans le cadre iPhone (mobile / installée) */
+  body[data-appmode="1"] { background: #0B0E16; }
+  body[data-appmode="1"] #root {
+    width: 100%; height: 100%;
+    height: 100dvh;
+  }
+  /* le contenu interne du device : scroll sans barre visible */
+  #stage *::-webkit-scrollbar { width: 0; height: 0; }
+  #stage * { scrollbar-width: none; }
+
+  /* transitions d'écran / de question.
+     L'état de repos est VISIBLE (opacity:1) ; l'entrée est purement additive
+     et ne s'applique que si le mouvement est permis — ainsi l'impression,
+     le PDF ou un contexte sans animation affichent toujours le contenu. */
+  @media (prefers-reduced-motion: no-preference) {
+    .q-fade { animation: qfade .42s cubic-bezier(.22,.61,.36,1) both; }
+  }
+  @keyframes qfade {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .spin { animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast { animation: toastin .26s cubic-bezier(.22,.61,.36,1) both; }
+  @keyframes toastin {
+    from { opacity: 0; transform: translate(-50%, 12px); }
+    to   { opacity: 1; transform: translate(-50%, 0); }
+  }
+
+  .sheet-scrim { animation: scrimin .2s ease both; }
+  @keyframes scrimin { from { opacity: 0; } to { opacity: 1; } }
+  .sheet-card { animation: sheetin .32s cubic-bezier(.22,.61,.36,1) both; }
+  @keyframes sheetin { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  [data-anim="off"] .sheet-scrim, [data-anim="off"] .sheet-card { animation: none !important; }
+
+  /* Accessibilité — Lecture facile : police hyper-lisible + espacement */
+  [data-a11y="easy"] #root * {
+    font-family: "Atkinson Hyperlegible", -apple-system, system-ui, sans-serif !important;
+    letter-spacing: 0.01em !important;
+  }
+  [data-a11y="easy"] #root p,
+  [data-a11y="easy"] #root span,
+  [data-a11y="easy"] #root li { line-height: 1.55 !important; }
+
+  /* Impression : seule la fiche récap sort, sur fond blanc */
+  @media print {
+    body { background: #fff !important; }
+    body * { visibility: hidden !important; }
+    .recap-sheet, .recap-sheet * { visibility: visible !important; }
+    .recap-chrome { display: none !important; }
+    .recap-sheet {
+      position: absolute !important; top: 0; left: 0;
+      width: 100% !important; margin: 0 !important; border-radius: 0 !important;
+      box-shadow: none !important; padding: 24px !important;
+    }
+  }
+
+  /* réduction d'animations (Tweak) */
+  [data-anim="off"] .q-fade { animation: none !important; }
+  [data-anim="off"] * { transition: none !important; }
+
+  button { font-family: inherit; -webkit-tap-highlight-color: transparent; }
+</style>
+</head>
+<body>
+  <template id="__bundler_thumbnail">
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#1a2036"/><stop offset="1" stop-color="#0B0E16"/>
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" fill="url(#bg)"/>
+      <g transform="translate(256 268)">
+        <path d="M0 -150 L40 -40 L150 0 L40 40 L0 150 L-40 40 L-150 0 L-40 -40 Z" fill="#ffffff"/>
+        <path d="M0 -95 L26 -26 L95 0 L26 26 L0 95 L-26 26 L-95 0 L-26 -26 Z" fill="#7c6cff"/>
+        <circle cx="0" cy="0" r="20" fill="#0B0E16"/>
+      </g>
+    </svg>
+  </template>
+  <div id="stage"><div id="root"></div></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="data.jsx"></script>
+  <script type="text/babel" src="ui.jsx"></script>
+  <script type="text/babel" src="screens.jsx"></script>
+  <script type="text/babel" src="extras.jsx"></script>
+  <script type="text/babel" src="extras2.jsx"></script>
+
+  <script type="text/babel">
+    const { useState, useEffect, useMemo, useRef } = React;
+    const STORE = 'orientation3e_state_v1';
+    const STORE_PROFILE = 'orientation3e_profile_v1';
+
+    const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+      "accent": "Indigo",
+      "glow": true,
+      "anim": true,
+      "a11y": false,
+      "ads": true,
+      "theme": "Sombre"
+    }/*EDITMODE-END*/;
+
+    const ACCENT_HUES = { Indigo: 280, Cyan: 200, Ambre: 45, Rose: 350 };
+
+    function loadState() {
+      try {
+        const s = JSON.parse(localStorage.getItem(STORE));
+        if (s && Array.isArray(s.answers)) return s;
+      } catch (e) {}
+      return null;
+    }
+
+    function loadProfile() {
+      try {
+        const p = JSON.parse(localStorage.getItem(STORE_PROFILE));
+        if (p && typeof p === 'object') return {
+          result: p.result || null, favorites: p.favorites || [], prenom: p.prenom || '',
+          subjects: p.subjects || [], history: p.history || [], checklist: p.checklist || [],
+          voieFavs: p.voieFavs || [], onboarded: !!p.onboarded, classe: p.classe || '', goal: p.goal || '',
+          journal: p.journal || [], riasec: p.riasec || null, academie: p.academie || '',
+          reminders: p.reminders || { enabled: [], custom: [] },
+        };
+      } catch (e) {}
+      return { result: null, favorites: [], prenom: '', subjects: [], history: [], checklist: [], voieFavs: [], onboarded: false, classe: '', goal: '', journal: [], riasec: null, academie: '', reminders: { enabled: [], custom: [] } };
+    }
+
+    function App() {
+      const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+      // applique l'accent app + halos + thème avant tout rendu enfant
+      setAppHue(ACCENT_HUES[t.accent] || 280);
+      setGlowOn(t.glow !== false);
+      applyTheme(t.theme === 'Clair' ? 'light' : 'dark');
+
+      const init = loadState();
+      const migrate = (s) => (s === 'home' || s === 'profile' || !s) ? 'tabs' : s;
+      const [screen, setScreen] = useState(migrate(init?.screen));
+      const [tab, setTab] = useState(init?.tab || (init?.screen === 'profile' ? 'profil' : 'voie'));
+      const [quizMode, setQuizMode] = useState(init?.quizMode || 'full');
+      const [qIndex, setQIndex] = useState(init?.qIndex || 0);
+      const [answers, setAnswers] = useState(init?.answers || Array(QUESTIONS.length).fill(null));
+      const [detailKey, setDetailKey] = useState(init?.detailKey || 'gen');
+      const [detailFrom, setDetailFrom] = useState(init?.detailFrom || 'result');
+      const [profileFrom, setProfileFrom] = useState('tabs');
+      const [subjectsFrom, setSubjectsFrom] = useState('tabs');
+      const [profile, setProfile] = useState(loadProfile);
+      const [toast, setToast] = useState(null);
+      const [sheetId, setSheetId] = useState(null);   // métier ouvert (fiche) ou null
+      const [sheetHue, setSheetHue] = useState(null);
+      const [backTo, setBackTo] = useState('tabs');   // retour générique (glossaire/compare)
+      const [compareInit, setCompareInit] = useState(['gen', 'pro']);
+      const [fitId, setFitId] = useState(null);   // mini-quiz métier ouvert
+      const [etabCfg, setEtabCfg] = useState({ filter: 'all', context: '' });
+      const [riasecAns, setRiasecAns] = useState(null);   // résultat RIASEC en cours
+
+      const quizQuestions = quizMode === 'express' ? QUESTIONS_EXPRESS : QUESTIONS;
+
+      // persistance du parcours
+      useEffect(() => {
+        localStorage.setItem(STORE, JSON.stringify({ screen, tab, quizMode, qIndex, answers, detailKey, detailFrom }));
+      }, [screen, tab, quizMode, qIndex, answers, detailKey, detailFrom]);
+
+      // persistance du profil (résultat sauvegardé + métiers favoris)
+      useEffect(() => {
+        localStorage.setItem(STORE_PROFILE, JSON.stringify(profile));
+      }, [profile]);
+
+      // flag d'animation sur le body (cible le CSS [data-anim="off"])
+      useEffect(() => {
+        document.body.dataset.anim = t.anim === false ? 'off' : 'on';
+      }, [t.anim]);
+
+      // accessibilité — lecture facile
+      useEffect(() => {
+        if (t.a11y) document.body.dataset.a11y = 'easy';
+        else document.body.removeAttribute('data-a11y');
+      }, [t.a11y]);
+
+      // thème clair / sombre sur le body (fond du letterbox + barre d'état)
+      useEffect(() => {
+        document.body.dataset.theme = t.theme === 'Clair' ? 'light' : 'dark';
+      }, [t.theme]);
+
+      // toast auto-disparaissant
+      useEffect(() => {
+        if (!toast) return;
+        const id = setTimeout(() => setToast(null), 2100);
+        return () => clearTimeout(id);
+      }, [toast]);
+
+      const [notifState, setNotifState] = useState(() => (typeof Notification === 'undefined' ? 'unsupported' : Notification.permission));
+
+      // alerte à l'ouverture : signale une échéance proche (une fois par session)
+      useEffect(() => {
+        if (!profile.onboarded) return;
+        const up = activeReminders(profile.reminders);
+        const soon = up.find((r) => r.days <= 7);
+        if (!soon) return;
+        let last = '';
+        try { last = sessionStorage.getItem('orientation3e_lastAlert') || ''; } catch (e) {}
+        if (last === soon.id + ':' + soon.days) return;
+        try { sessionStorage.setItem('orientation3e_lastAlert', soon.id + ':' + soon.days); } catch (e) {}
+        const msg = soon.days <= 0 ? `C’est aujourd’hui : ${soon.title} !` : `Dans ${soon.days} jour${soon.days > 1 ? 's' : ''} : ${soon.title}`;
+        setTimeout(() => setToast(msg), 900);
+        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+          try { new Notification('Orientation 3ᵉ — rappel', { body: msg }); } catch (e) {}
+        }
+      }, [profile.onboarded]);
+
+      const result = useMemo(() => computeResult(answers, quizQuestions), [answers, quizMode]);
+
+      function start(mode) {
+        const m = mode === 'express' ? 'express' : 'full';
+        const qs = m === 'express' ? QUESTIONS_EXPRESS : QUESTIONS;
+        setQuizMode(m);
+        setAnswers(Array(qs.length).fill(null));
+        setQIndex(0);
+        setScreen('quiz');
+      }
+      function toggleAnswer(i) {
+        setAnswers((prev) => {
+          const next = prev.slice();
+          const cur = Array.isArray(next[qIndex]) ? next[qIndex].slice() : (next[qIndex] == null ? [] : [next[qIndex]]);
+          const at = cur.indexOf(i);
+          if (at >= 0) { cur.splice(at, 1); }            // désélectionne
+          else if (cur.length < 2) { cur.push(i); }       // ajoute (max 2)
+          else { cur.shift(); cur.push(i); }              // remplace le plus ancien
+          next[qIndex] = cur;
+          return next;
+        });
+      }
+      function nextQuestion() {
+        const cur = answers[qIndex];
+        const has = Array.isArray(cur) ? cur.length > 0 : cur != null;
+        if (!has) return;
+        const last = qIndex === quizQuestions.length - 1;
+        if (last) finishQuiz(answers); else setQIndex(qIndex + 1);
+      }
+      function finishQuiz(finalAnswers) {
+        // sauvegarde automatique du résultat dans le profil (autonome) + historique
+        const r = computeResult(finalAnswers || answers, quizQuestions);
+        const entry = {
+          mainKey: r.main.key, mainPct: r.main.pct, date: Date.now(), mode: quizMode,
+          alts: r.alts.map((a) => ({ key: a.key, pct: a.pct })),
+        };
+        setProfile((p) => ({
+          ...p,
+          result: entry,
+          history: [entry, ...(p.history || [])].slice(0, 10),
+          checklist: [...new Set([...(p.checklist || [])])],
+        }));
+        setScreen(t.ads === false ? 'computing' : 'ad');
+      }
+      function openDetail(key, from) { setSheetId(null); setDetailKey(key); setDetailFrom(from || screen); setScreen('detail'); }
+      function openProfile() { setTab('profil'); setScreen('tabs'); }
+      function goTab(k) { setTab(k); setScreen('tabs'); }
+      function openMetier(id, hue) { setSheetId(id); setSheetHue(hue != null ? hue : null); }
+      function openEtabForMetier(id) {
+        const m = metierById(id); if (!m) return;
+        const hasGT = m.voies.includes('gen') || m.voies.includes('tech');
+        const hasPro = m.voies.includes('pro') || m.voies.includes('cap') || m.voies.includes('alt');
+        const filter = (hasPro && !hasGT) ? 'pro' : (hasGT && !hasPro) ? 'gt' : 'all';
+        setSheetId(null);
+        setEtabCfg({ filter, context: m.name });
+        openScreen('etab', screen);
+      }
+      function openScreen(s, from) { setBackTo(from || screen); setScreen(s); }
+      // RIASEC
+      function startRiasec() { setRiasecAns(null); setBackTo('tabs'); setScreen('riasec'); }
+      function finishRiasec(ans) {
+        setRiasecAns(ans);
+        const r = computeRiasec(ans);
+        setProfile((p) => ({ ...p, riasec: { code: r.code, ranked: r.ranked, date: Date.now() } }));
+        setScreen('riasec-result');
+      }
+      function riasecResult() {
+        if (riasecAns) return computeRiasec(riasecAns);
+        const rk = profile.riasec && profile.riasec.ranked;
+        if (rk) return { ranked: rk, top: rk.slice(0, 3), code: profile.riasec.code };
+        return computeRiasec(Array(RIASEC_QUESTIONS.length).fill(0));
+      }
+      // Journal
+      function addNote(n) { setProfile((p) => ({ ...p, journal: [...(p.journal || []), n] })); setToast('Note ajoutée au carnet'); }
+      function deleteNote(id) { setProfile((p) => ({ ...p, journal: (p.journal || []).filter((x) => x.id !== id) })); }
+      // Rappels
+      function toggleReminderKey(id) {
+        setProfile((p) => {
+          const r = p.reminders || { enabled: [], custom: [] };
+          const en = r.enabled || [];
+          return { ...p, reminders: { ...r, enabled: en.includes(id) ? en.filter((x) => x !== id) : [...en, id] } };
+        });
+      }
+      function addCustomReminder(c) { setProfile((p) => { const r = p.reminders || { enabled: [], custom: [] }; return { ...p, reminders: { ...r, custom: [...(r.custom || []), c] } }; }); setToast('Rappel ajouté'); }
+      function deleteCustomReminder(id) { setProfile((p) => { const r = p.reminders || { enabled: [], custom: [] }; return { ...p, reminders: { ...r, custom: (r.custom || []).filter((x) => x.id !== id) } }; }); }
+      function enableNotif() {
+        if (typeof Notification === 'undefined') { setNotifState('unsupported'); return; }
+        Notification.requestPermission().then((perm) => {
+          setNotifState(perm);
+          if (perm === 'granted') { setToast('Notifications activées'); try { new Notification('Orientation 3ᵉ', { body: 'Tu seras prévenu·e à l’approche de tes échéances.' }); } catch (e) {} }
+        }).catch(() => {});
+      }
+      function toggleCheck(id) {
+        setProfile((p) => {
+          const cur = p.checklist || [];
+          return { ...p, checklist: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] };
+        });
+      }
+      const isVoieFav = (k) => (profile.voieFavs || []).includes(k);
+      function toggleVoieFav(k) {
+        setProfile((p) => {
+          const cur = p.voieFavs || [];
+          if (cur.includes(k)) return { ...p, voieFavs: cur.filter((x) => x !== k) };
+          setToast('Voie épinglée dans ton profil');
+          return { ...p, voieFavs: [...cur, k] };
+        });
+      }
+      function finishOnboarding(data) {
+        setProfile((p) => ({ ...p, onboarded: true, prenom: data.prenom || p.prenom, classe: data.classe || p.classe, goal: data.goal || p.goal }));
+        setTab('voie'); setScreen('tabs');
+      }
+
+      // favoris métiers (stocke le métier complet par id stable)
+      const isFav = (id) => (profile.favorites || []).some((f) => f.id === id);
+      function toggleFav(m) {
+        const id = metierId(m);
+        setProfile((p) => {
+          const favs = p.favorites || [];
+          if (favs.some((f) => f.id === id)) return { ...p, favorites: favs.filter((f) => f.id !== id) };
+          setToast('Métier enregistré dans ton profil');
+          return { ...p, favorites: [...favs, m] };
+        });
+      }
+
+      // partage du résultat
+      function share() {
+        const r = profile.result || { mainKey: result.main.key, mainPct: result.main.pct };
+        const f = FILIERES[r.mainKey];
+        const text = `Mon orientation après la 3ᵉ : ${f.name} — ${r.mainPct}% de compatibilité. Et toi, quelle est ta voie ?`;
+        if (navigator.share) {
+          navigator.share({ title: 'Mon orientation après la 3ᵉ', text }).catch(() => {});
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => setToast('Résultat copié !')).catch(() => setToast('Copie impossible'));
+        } else {
+          setToast('Partage indisponible ici');
+        }
+      }
+      function setPrenom(v) { setProfile((p) => ({ ...p, prenom: v })); }
+      function setAcademie(v) { setProfile((p) => ({ ...p, academie: v })); }
+      // export anonyme pour le conseil de classe (sans prénom)
+      function shareAnon() {
+        const r = profile.result; if (!r) return;
+        const f = FILIERES[r.mainKey];
+        const alts = (r.alts || []).map((a) => `${FILIERES[a.key].name} (${a.pct}%)`).join(', ');
+        const ria = profile.riasec ? `\nProfil d'intérêts (RIASEC) : ${profile.riasec.code}.` : '';
+        const favs = (profile.favorites || []).slice(0, 5).map((m) => m.name).join(', ');
+        const text =
+          `Synthèse d'orientation (élève de ${profile.classe || '3ᵉ'}) — anonyme\n` +
+          `Voie recommandée : ${f.name} — ${r.mainPct}% de compatibilité.` +
+          (alts ? `\nAlternatives : ${alts}.` : '') +
+          ria +
+          (favs ? `\nMétiers explorés : ${favs}.` : '') +
+          `\n\nGénéré par l'app Orientation 3ᵉ (test indicatif, à discuter avec l'équipe éducative).`;
+        if (navigator.share) {
+          navigator.share({ title: 'Synthèse d\u2019orientation', text }).catch(() => {});
+        } else if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => setToast('Synthèse copiée !')).catch(() => setToast('Copie impossible'));
+        } else { setToast('Partage indisponible ici'); }
+      }
+      function toggleSubject(id) {
+        setProfile((p) => {
+          const cur = p.subjects || [];
+          return { ...p, subjects: cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id] };
+        });
+      }
+      function openSubjects(from) { setSubjectsFrom(from || screen); setScreen('subjects'); }
+      function openRecap() { setProfileFrom('tabs'); setScreen('recap'); }
+      function doPrint() {
+        document.body.dataset.printing = '1';
+        setTimeout(() => { try { window.print(); } catch (e) {} setTimeout(() => { delete document.body.dataset.printing; }, 400); }, 60);
+      }
+
+      // ── Récap en image (canvas) ──────────────────────────────
+      async function shareRecapImage() {
+        const res = profile.result; if (!res) return;
+        const f = FILIERES[res.mainKey];
+        const hueCss = accent(f.hue, { l: 0.7, c: 0.16 });
+        const W = 1080, H = 1350, P = 80;
+        const c = document.createElement('canvas'); c.width = W; c.height = H;
+        const x = c.getContext('2d');
+        try { await document.fonts.ready; } catch (e) {}
+        // fond
+        x.fillStyle = '#0B0E16'; x.fillRect(0, 0, W, H);
+        const g = x.createRadialGradient(W / 2, 120, 60, W / 2, 120, 760);
+        g.addColorStop(0, accent(f.hue, { l: 0.62, c: 0.17, a: 0.5 })); g.addColorStop(1, 'rgba(11,14,22,0)');
+        x.fillStyle = g; x.fillRect(0, 0, W, 700);
+        const rr = (X, Y, w, h, r) => { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + w, Y, X + w, Y + h, r); x.arcTo(X + w, Y + h, X, Y + h, r); x.arcTo(X, Y + h, X, Y, r); x.arcTo(X, Y, X + w, Y, r); x.closePath(); };
+        let Y = 120;
+        x.textBaseline = 'alphabetic';
+        x.fillStyle = 'rgba(233,237,246,0.6)'; x.font = '700 26px Manrope, sans-serif';
+        x.fillText('RÉCAP D’ORIENTATION · APRÈS LA 3ᵉ', P, Y); Y += 58;
+        x.fillStyle = '#F3F5FA'; x.font = '700 64px "Space Grotesk", sans-serif';
+        x.fillText(profile.prenom ? `Le projet de ${profile.prenom}` : 'Mon projet d’orientation', P, Y); Y += 30;
+        const dateStr = new Date(res.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+        x.fillStyle = 'rgba(233,237,246,0.5)'; x.font = '600 28px Manrope, sans-serif';
+        x.fillText('Établi le ' + dateStr, P, Y + 34); Y += 96;
+        // carte voie reco
+        x.fillStyle = accent(f.hue, { l: 0.72, c: 0.15, a: 0.16 }); rr(P, Y, W - 2 * P, 220, 28); x.fill();
+        x.fillStyle = hueCss; rr(P, Y, 10, 220, 5); x.fill();
+        x.fillStyle = 'rgba(233,237,246,0.6)'; x.font = '700 24px Manrope, sans-serif';
+        x.fillText('VOIE RECOMMANDÉE', P + 44, Y + 56);
+        x.fillStyle = '#F3F5FA'; x.font = '700 56px "Space Grotesk", sans-serif';
+        x.fillText(f.name, P + 44, Y + 120);
+        x.fillStyle = hueCss; x.font = '700 64px "Space Grotesk", sans-serif';
+        x.textAlign = 'right'; x.fillText(res.mainPct + '%', W - P - 44, Y + 110); x.textAlign = 'left';
+        x.fillStyle = 'rgba(233,237,246,0.75)'; x.font = '600 28px Manrope, sans-serif';
+        x.fillText(f.tagline, P + 44, Y + 172); Y += 280;
+        // alternatives
+        const alts = (res.alts && res.alts.length) ? res.alts : [];
+        if (alts.length) {
+          x.fillStyle = 'rgba(233,237,246,0.5)'; x.font = '700 24px Manrope, sans-serif';
+          x.fillText('À EXPLORER AUSSI', P, Y); Y += 46;
+          alts.slice(0, 2).forEach((a) => {
+            const af = FILIERES[a.key];
+            x.fillStyle = accent(af.hue, { l: 0.7, c: 0.16 }); x.beginPath(); x.arc(P + 12, Y - 9, 11, 0, 7); x.fill();
+            x.fillStyle = '#F3F5FA'; x.font = '600 32px Manrope, sans-serif';
+            x.fillText(`${af.name} · ${a.pct}%`, P + 40, Y); Y += 52;
+          });
+          Y += 14;
+        }
+        // métiers favoris
+        const favs = (profile.favorites || []).map((m) => metierById(m.id)).filter(Boolean).slice(0, 4);
+        if (favs.length) {
+          x.fillStyle = 'rgba(233,237,246,0.5)'; x.font = '700 24px Manrope, sans-serif';
+          x.fillText('MÉTIERS QUI M’INTÉRESSENT', P, Y); Y += 46;
+          favs.forEach((m) => {
+            x.fillStyle = '#F3F5FA'; x.font = '600 32px Manrope, sans-serif';
+            x.fillText('•  ' + m.name + '  —  ' + SECTOR_LABEL[m.sector], P, Y);
+            Y += 50;
+          });
+          Y += 14;
+        }
+        // points forts
+        const pf = pointsForts(profile.subjects, res.mainKey);
+        if (pf.chosenLabels.length) {
+          x.fillStyle = 'rgba(233,237,246,0.5)'; x.font = '700 24px Manrope, sans-serif';
+          x.fillText('MES POINTS FORTS', P, Y); Y += 44;
+          x.fillStyle = 'rgba(233,237,246,0.85)'; x.font = '600 28px Manrope, sans-serif';
+          x.fillText(pf.chosenLabels.join(', '), P, Y); Y += 44;
+        }
+        // footer
+        x.fillStyle = 'rgba(233,237,246,0.4)'; x.font = '600 22px Manrope, sans-serif';
+        x.fillText('Repère indicatif — données de référence : Onisep.', P, H - 70);
+
+        await new Promise((resolve) => c.toBlob(async (blob) => {
+          if (!blob) { setToast('Image indisponible ici'); return resolve(); }
+          const file = new File([blob], 'mon-orientation.png', { type: 'image/png' });
+          try {
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({ files: [file], title: 'Mon orientation après la 3ᵉ' });
+            } else {
+              const url = URL.createObjectURL(blob); const a = document.createElement('a');
+              a.href = url; a.download = 'mon-orientation.png'; a.click(); URL.revokeObjectURL(url);
+              setToast('Image enregistrée');
+            }
+          } catch (e) {}
+          resolve();
+        }, 'image/png'));
+      }
+
+      // raisons de la reco (à partir des réponses) pour l'écran résultat
+      const reasons = useMemo(() => rationaleFor(answers, quizQuestions, result.main.key, 3), [answers, quizMode, result.main.key]);
+
+      // contenu d'un onglet racine (sous la tab bar)
+      function tabContent() {
+        if (tab === 'metiers') return <MetiersScreen onOpenMetier={(id) => openMetier(id, null)} isFav={isFav} onToggleFav={toggleFav} />;
+        if (tab === 'profil') return <ProfileScreen asTab profile={profile} onRetake={() => start('full')} onShare={share} onOpen={(k) => openDetail(k, 'tabs')} onOpenMetier={(id) => openMetier(id, null)} onSetPrenom={setPrenom} onRecap={openRecap} onEditSubjects={() => openSubjects('tabs')} onGlossaire={() => openScreen('glossaire', 'tabs')} onParents={() => openScreen('parents', 'tabs')} onQuestions={() => openScreen('questions', 'tabs')} onJournal={() => openScreen('journal', 'tabs')} onAnonExport={shareAnon} isVoieFav={isVoieFav} onToggleVoieFav={toggleVoieFav} isFav={isFav} onToggleFav={toggleFav} />;
+        return <HomeScreen prenom={profile.prenom} reminders={profile.reminders} onReminders={() => openScreen('reminders', 'tabs')} onStart={() => start('full')} onExpress={() => start('express')} onRiasec={startRiasec} onSteps={() => { setProfileFrom('tabs'); setScreen('steps'); }} onEtab={() => { setEtabCfg({ filter: 'all', context: '' }); openScreen('etab', 'tabs'); }} onEvents={() => openScreen('events', 'tabs')} onTension={() => openScreen('tension', 'tabs')} />;
+      }
+
+      let body, showTabBar = false, activeTab = tab;
+      if (!profile.onboarded) {
+        body = <OnboardingScreen onDone={finishOnboarding} />;
+      } else if (screen === 'tabs') {
+        showTabBar = true;
+        body = tabContent();
+      } else if (screen === 'quiz') {
+        body = <QuizScreen questions={quizQuestions} qIndex={qIndex} answers={answers} onToggle={toggleAnswer} onNext={nextQuestion} onPrev={() => setQIndex(Math.max(0, qIndex - 1))} onExit={() => goTab('voie')} />;
+      } else if (screen === 'computing') {
+        body = <ComputingScreen onDone={() => setScreen('result')} />;
+      } else if (screen === 'ad') {
+        body = <AdScreen durationS={30} onDone={() => setScreen('result')} />;
+      } else if (screen === 'result') {
+        showTabBar = true; activeTab = null;   // la tab bar reste accessible
+        body = <ResultScreen result={result} reasons={reasons} subjects={profile.subjects} onEditSubjects={() => openSubjects('result')} onCompare={() => { setCompareInit([result.main.key, result.alts[0].key]); openScreen('compare', 'result'); }} onOpen={(k) => openDetail(k, 'result')} onOpenMetier={(id) => openMetier(id, FILIERES[result.main.key].hue)} onRestart={() => start('full')} onProfile={openProfile} onShare={share} isFav={isFav} onToggleFav={toggleFav} />;
+      } else if (screen === 'detail') {
+        body = <DetailScreen filiereKey={detailKey} onBack={() => setScreen(detailFrom)} onOpenMetier={(id) => openMetier(id, FILIERES[detailKey].hue)} isVoieFav={isVoieFav} onToggleVoieFav={toggleVoieFav} isFav={isFav} onToggleFav={toggleFav} />;
+      } else if (screen === 'steps') {
+        body = <StepsScreen onBack={() => setScreen('tabs')} checked={profile.checklist} testDone={!!profile.result} onToggleCheck={toggleCheck} />;
+      } else if (screen === 'etab') {
+        body = <EtablissementsScreen onBack={() => setScreen(backTo)} initialFilter={etabCfg.filter} context={etabCfg.context} academie={profile.academie} onSetAcademie={setAcademie} />;
+      } else if (screen === 'subjects') {
+        body = <SubjectsScreen subjects={profile.subjects} voieKey={profile.result ? profile.result.mainKey : result.main.key} onToggle={toggleSubject} onBack={() => setScreen(subjectsFrom)} />;
+      } else if (screen === 'glossaire') {
+        body = <GlossaireScreen onBack={() => setScreen(backTo)} />;
+      } else if (screen === 'parents') {
+        body = <ParentsScreen onBack={() => setScreen(backTo)} onGlossaire={() => openScreen('glossaire', 'parents')} />;
+      } else if (screen === 'questions') {
+        body = <QuestionsPoserScreen onBack={() => setScreen(backTo)} />;
+      } else if (screen === 'compare') {
+        body = <CompareScreen initialA={compareInit[0]} initialB={compareInit[1]} onBack={() => setScreen(backTo)} onOpen={(k) => openDetail(k, 'compare')} />;
+      } else if (screen === 'recap') {
+        body = <RecapScreen profile={profile} result={result} onBack={() => goTab('profil')} onPrint={doPrint} onShareImage={shareRecapImage} />;
+      } else if (screen === 'riasec') {
+        body = <RiasecScreen onDone={finishRiasec} onBack={() => setScreen(backTo)} />;
+      } else if (screen === 'riasec-result') {
+        body = <RiasecResult result={riasecResult()} onBack={() => goTab('voie')} onOpenMetiers={() => goTab('metiers')} />;
+      } else if (screen === 'journal') {
+        body = <JournalScreen journal={profile.journal} onAdd={addNote} onDelete={deleteNote} onBack={() => setScreen(backTo)} />;
+      } else if (screen === 'events') {
+        body = <EventsScreen onBack={() => setScreen(backTo)} />;
+      } else if (screen === 'reminders') {
+        body = <RemindersScreen reminders={profile.reminders} academie={profile.academie} notifState={notifState} onToggleKey={toggleReminderKey} onAddCustom={addCustomReminder} onDeleteCustom={deleteCustomReminder} onEnableNotif={enableNotif} onBack={() => setScreen(backTo)} />;
+      } else if (screen === 'tension') {
+        body = <TensionScreen onBack={() => setScreen(backTo)} onOpenMetiers={() => goTab('metiers')} />;
+      }
+
+      const screenKey = !profile.onboarded ? 'onboarding' : (screen === 'tabs' ? 'tab-' + tab : screen + (screen === 'quiz' ? quizMode + qIndex : screen === 'detail' ? detailKey : ''));
+      const sheetMetier = sheetId ? metierById(sheetId) : null;
+      const fitMetier = fitId ? metierById(fitId) : null;
+
+      return (
+        <React.Fragment>
+          <div style={{ width: '100%', height: '100%', background: T.bg, color: T.text, display: 'flex', flexDirection: 'column' }}>
+            <div key={screenKey} style={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{body}</div>
+            {showTabBar && <TabBar tab={activeTab} onTab={goTab} />}
+          </div>
+
+          {toast && (
+            <div className="toast" style={{
+              position: 'absolute', left: '50%', bottom: 54, transform: 'translateX(-50%)',
+              zIndex: 80, maxWidth: 320, textAlign: 'center',
+              padding: '13px 20px', borderRadius: 14,
+              background: 'rgba(20,24,34,0.92)', border: `1px solid ${T.line}`,
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+              boxShadow: '0 12px 34px rgba(0,0,0,0.45)',
+              fontFamily: FONT_UI, fontSize: 14.5, fontWeight: 700, color: T.text,
+            }}>{toast}</div>
+          )}
+
+          {sheetMetier && (
+            <MetierSheet
+              metier={sheetMetier}
+              fromHue={sheetHue}
+              onClose={() => setSheetId(null)}
+              onOpenVoie={(vk) => openDetail(vk, screen)}
+              onFit={(id) => setFitId(id)}
+              onWhere={openEtabForMetier}
+              isFav={isFav}
+              onToggleFav={toggleFav}
+            />
+          )}
+
+          {fitMetier && (
+            <MetierFitSheet metier={fitMetier} hue={sheetHue != null ? sheetHue : FILIERES[fitMetier.voies[0]].hue} onClose={() => setFitId(null)} />
+          )}
+
+          <TweaksPanel>
+            <TweakSection label="Apparence" />
+            <TweakRadio label="Thème" value={t.theme}
+              options={['Sombre', 'Clair']}
+              onChange={(v) => setTweak('theme', v)} />
+            <TweakRadio label="Accent" value={t.accent}
+              options={['Indigo', 'Cyan', 'Ambre', 'Rose']}
+              onChange={(v) => setTweak('accent', v)} />
+            <TweakToggle label="Halos lumineux" value={t.glow}
+              onChange={(v) => setTweak('glow', v)} />
+            <TweakToggle label="Animations" value={t.anim}
+              onChange={(v) => setTweak('anim', v)} />
+            <TweakToggle label="Pub (démo)" value={t.ads}
+              onChange={(v) => setTweak('ads', v)} />
+            <TweakSection label="Accessibilité" />
+            <TweakToggle label="Lecture facile" value={t.a11y}
+              onChange={(v) => setTweak('a11y', v)} />
+          </TweaksPanel>
+        </React.Fragment>
+      );
+    }
+
+    // Mode « vraie app » : plein écran sur téléphone ou une fois installée ;
+    // le cadre iPhone n'est gardé que sur grand écran (prévisualisation bureau).
+    const APP_MODE =
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true ||
+      Math.min(window.innerWidth, window.innerHeight) <= 640 ||
+      new URLSearchParams(location.search).has('app');
+    if (APP_MODE) document.body.dataset.appmode = '1';
+
+    function Root() {
+      if (APP_MODE) return <App />;
+      return (
+        <IOSDevice dark width={402} height={874}>
+          <App />
+        </IOSDevice>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<Root />);
+
+    // ─ scaling du device pour tenir dans le viewport (mode cadre uniquement) ─
+    function fit() {
+      if (APP_MODE) return;
+      const stage = document.getElementById('stage');
+      const dev = stage.firstElementChild;
+      if (!dev) return;
+      const m = 24;
+      const s = Math.min(1, (window.innerHeight - m * 2) / 874, (window.innerWidth - m * 2) / 402);
+      dev.style.transform = `scale(${s})`;
+      dev.style.transformOrigin = 'center center';
+    }
+    window.addEventListener('resize', fit);
+    const fitObs = new MutationObserver(fit);
+    fitObs.observe(document.getElementById('root'), { childList: true, subtree: true });
+    setTimeout(fit, 60); setTimeout(fit, 300);
+  </script>
+
+  <script>
+    /* Enregistrement du service worker (PWA hors-ligne).
+       Ne s'exécute que sur http/https — ignoré dans l'aperçu file://. */
+    if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
